@@ -1,0 +1,71 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Vibe</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet"/>
+</head>
+
+<body style="background-image: url('{{ image_url }}?t={{ current_timestamp }}');">
+  <div class="gradient-overlay"></div>
+  <div class="container">
+    <h1 class="heading">Weather Vibe</h1>
+    
+    <form method="POST" class="search-form" id="search-form">
+      {% csrf_token %}
+      <input type="text" name="city" placeholder="Explore a City..." class="search-input" id="search-input">
+      <button type="submit" class="search-btn">Discover</button>
+    </form>
+    
+    <div class="transparent-box">
+      <div class="weather-card">
+        <!-- Display Error Message if Exists -->
+        {% if exception_occurred and error_message %}
+          <div class="error-message">
+            <p>{{ error_message }}</p>
+            <button type="button" class="retry-btn">Retry</button>
+          </div>
+        {% endif %}
+        
+        <div class="weather-header">
+          <h2 class="city">{{ city|title }}</h2>
+          <span class="mood">{{ mood_emoji }}</span>
+        </div>
+        <div class="weather-body">
+          <img src="http://openweathermap.org/img/w/{{ icon }}.png" class="weather-icon" alt="{{ description }}">
+          <h2 class="temp">{{ temp }}°C</h2>
+          <p class="description">{{ description|title }}</p>
+          <p class="date">{{ day }}</p>
+        </div>
+        <form method="POST" class="forecast-toggle-form">
+          {% csrf_token %}
+          <input type="hidden" name="city" value="{{ city }}">
+          <button type="submit" name="toggle_forecast" class="toggle-btn">
+            {% if show_forecast %}Forecast Loaded{% else %}Show 5-Day Forecast{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {% if show_forecast %}
+    <div class="forecast" id="forecast">
+      <h2 class="forecast-title">5-Day Outlook</h2>
+      <div class="forecast-container">
+        {% for forecast in forecast_list %}
+          <div class="forecast-card">
+            <p class="forecast-date">{{ forecast.time|date:"M d" }}</p>
+            <img src="http://openweathermap.org/img/w/{{ forecast.icon }}.png" class="forecast-icon" alt="{{ forecast.description }}">
+            <p class="forecast-temp">{{ forecast.temp }}°C</p>
+            <p class="forecast-desc">{{ forecast.description|title }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>
