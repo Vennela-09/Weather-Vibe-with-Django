@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 import requests
 import datetime
 import time
+from decouple import config
 
 def home(request):
     # Use session to persist city and show_forecast states
@@ -29,18 +30,20 @@ def home(request):
             searched_city = city
             print(f"After toggle, city: {city}, show_forecast: {show_forecast}")
 
-    current_url = f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid=35ea4bd35940eab1e43407b27cf7be9e'
-    forecast_url = f'https://api.openweathermap.org/data/2.5/forecast?q={city}&appid=35ea4bd35940eab1e43407b27cf7be9e'
-    PARAMS = {'units': 'metric'}
+    # Load API keys from environment variables
+    OPENWEATHERMAP_API_KEY = config('OPENWEATHERMAP_API_KEY')
+    GOOGLE_API_KEY = config('GOOGLE_API_KEY')
+    GOOGLE_SEARCH_ENGINE_ID = config('GOOGLE_SEARCH_ENGINE_ID')
 
-    API_KEY = 'AIzaSyCKo6bQWO1Z38DUj0yPlIWFA6q-KC56XKA'
-    SEARCH_ENGINE_ID = '945c8c532493741fa'
+    current_url = f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHERMAP_API_KEY}'
+    forecast_url = f'https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={OPENWEATHERMAP_API_KEY}'
+    PARAMS = {'units': 'metric'}
 
     queries = [f"{city} 1920x1080", f"{city} cityscape", f"{city} landscape"]
     image_url = None
 
     for query in queries:
-        city_url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&searchType=image&imgSize=xlarge"
+        city_url = f"https://www.googleapis.com/customsearch/v1?key={GOOGLE_API_KEY}&cx={GOOGLE_SEARCH_ENGINE_ID}&q={query}&searchType=image&imgSize=xlarge"
         try:
             image_data = requests.get(city_url, timeout=10).json()
             print(f"Image API response for {city} with query '{query}': {image_data}")
@@ -131,10 +134,10 @@ def home(request):
         error_message = f"City '{searched_city}' not found. Showing weather for Mangaluru instead. Please try again."
         city = 'mangaluru'
         request.session['city'] = city  # Update session with fallback city
-        current_url = f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid=35ea4bd35940eab1e43407b27cf7be9e'
+        current_url = f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHERMAP_API_KEY}'
 
         for query in queries:
-            city_url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&searchType=image&imgSize=xlarge"
+            city_url = f"https://www.googleapis.com/customsearch/v1?key={GOOGLE_API_KEY}&cx={GOOGLE_SEARCH_ENGINE_ID}&q={query}&searchType=image&imgSize=xlarge"
             try:
                 image_data = requests.get(city_url, timeout=10).json()
                 print(f"Image API response for Mangaluru with query '{query}': {image_data}")
@@ -194,7 +197,7 @@ def home(request):
             return render(request, 'app/index.html', context)
 
         except (KeyError, requests.exceptions.RequestException):
-            error_message = f"City '{searched_city}' not found, and fallback data for Mangaluru is retrieved. Please try again."
+            error_message = f"City '{searched_city}' not found, and fallback data for Mangaluru could not be retrieved. Please try again."
             day = datetime.date.today()
             return render(request, 'app/index.html', {
                 'description': 'clear sky',
@@ -210,10 +213,3 @@ def home(request):
                 'show_forecast': show_forecast,
                 'current_timestamp': current_timestamp
             })
-
-
-
-
-
-
-
